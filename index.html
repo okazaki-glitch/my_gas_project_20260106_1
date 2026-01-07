@@ -186,6 +186,55 @@
         animation: cardPop 0.35s ease;
       }
 
+      .memo-text {
+        white-space: pre-wrap;
+        line-height: 1.6;
+      }
+
+      .memo-editor {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 14px;
+        border: 2px solid var(--stroke);
+        padding: 12px 14px;
+        font-size: 15px;
+        font-family: "Zen Maru Gothic", "Fredoka", "Trebuchet MS", sans-serif;
+        resize: vertical;
+        background: #ffffff;
+        box-shadow: 3px 3px 0 rgba(30, 26, 51, 0.4);
+        margin-top: 10px;
+      }
+
+      .memo-editor:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(255, 95, 162, 0.25);
+      }
+
+      .memo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .memo-actions button {
+        padding: 8px 18px;
+        font-size: 13px;
+        box-shadow: 3px 3px 0 rgba(30, 26, 51, 0.7);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(120deg, var(--accent-alt), #7eeadf 55%, #b8fff5);
+        color: #1e1a33;
+      }
+
+      .btn-outline {
+        background: #ffffff;
+        color: var(--ink);
+        border: 2px solid var(--stroke);
+      }
+
       .memo-card:nth-child(3n + 1) {
         background: #fff1f8;
       }
@@ -304,11 +353,121 @@
           date.textContent = memo.createdAt || "不明な日時";
 
           const text = document.createElement("div");
+          text.className = "memo-text";
           text.textContent = memo.text || "";
+
+          const actions = document.createElement("div");
+          actions.className = "memo-actions";
+
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "btn-secondary";
+          editBtn.textContent = "編集";
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "btn-outline";
+          deleteBtn.textContent = "削除";
+
+          actions.append(editBtn, deleteBtn);
 
           card.appendChild(date);
           card.appendChild(text);
+          card.appendChild(actions);
           memoList.appendChild(card);
+
+          if (!memo.id) {
+            editBtn.disabled = true;
+            deleteBtn.disabled = true;
+            return;
+          }
+
+          editBtn.addEventListener("click", () => {
+            if (card.classList.contains("editing")) {
+              return;
+            }
+
+            card.classList.add("editing");
+            const editor = document.createElement("textarea");
+            editor.className = "memo-editor";
+            editor.value = memo.text || "";
+            card.insertBefore(editor, actions);
+            text.style.display = "none";
+
+            const updateBtn = document.createElement("button");
+            updateBtn.type = "button";
+            updateBtn.className = "btn-secondary";
+            updateBtn.textContent = "更新";
+
+            const cancelBtn = document.createElement("button");
+            cancelBtn.type = "button";
+            cancelBtn.className = "btn-outline";
+            cancelBtn.textContent = "キャンセル";
+
+            editBtn.style.display = "none";
+            deleteBtn.style.display = "none";
+            actions.append(updateBtn, cancelBtn);
+
+            const exitEdit = () => {
+              editor.remove();
+              text.style.display = "";
+              card.classList.remove("editing");
+              updateBtn.remove();
+              cancelBtn.remove();
+              editBtn.style.display = "";
+              deleteBtn.style.display = "";
+            };
+
+            cancelBtn.addEventListener("click", () => {
+              exitEdit();
+            });
+
+            updateBtn.addEventListener("click", () => {
+              const newText = editor.value.trim();
+              if (!newText) {
+                setStatus("更新するメモを入力してください。", true);
+                return;
+              }
+
+              setStatus("更新中...");
+              updateBtn.disabled = true;
+              cancelBtn.disabled = true;
+
+              google.script.run
+                .withSuccessHandler(() => {
+                  setStatus("更新しました。");
+                  loadMemos();
+                })
+                .withFailureHandler((err) => {
+                  setStatus(err.message, true);
+                  updateBtn.disabled = false;
+                  cancelBtn.disabled = false;
+                })
+                .updateMemo(memo.id, newText);
+            });
+          });
+
+          deleteBtn.addEventListener("click", () => {
+            if (!confirm("このメモを削除しますか？")) {
+              return;
+            }
+
+            setStatus("削除中...");
+            editBtn.disabled = true;
+            deleteBtn.disabled = true;
+
+            google.script.run
+              .withSuccessHandler(() => {
+                setStatus("削除しました。");
+                loadMemos();
+              })
+              .withFailureHandler((err) => {
+                setStatus(err.message, true);
+                editBtn.disabled = false;
+                deleteBtn.disabled = false;
+              })
+              .deleteMemo(memo.id);
+          });
         });
       }
 

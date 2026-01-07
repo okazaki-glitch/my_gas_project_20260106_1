@@ -1,15 +1,51 @@
 function doGet() {
   return HtmlService.createHtmlOutputFromFile("index")
-    .setTitle("Memo App");
+    .setTitle("メモアプリ");
 }
 
 function saveMemo(text) {
   if (!text || !text.trim()) {
-    throw new Error("Memo text is empty.");
+    throw new Error("メモが空です。");
   }
 
   var sheet = getMemoSheet_();
   sheet.appendRow([new Date(), text.trim()]);
+  return { ok: true };
+}
+
+function updateMemo(rowId, text) {
+  if (!text || !text.trim()) {
+    throw new Error("メモが空です。");
+  }
+
+  var row = Number(rowId);
+  if (!row || row < 2) {
+    throw new Error("無効なメモです。");
+  }
+
+  var sheet = getMemoSheet_();
+  var lastRow = sheet.getLastRow();
+  if (row > lastRow) {
+    throw new Error("対象のメモが見つかりません。");
+  }
+
+  sheet.getRange(row, 2).setValue(text.trim());
+  return { ok: true };
+}
+
+function deleteMemo(rowId) {
+  var row = Number(rowId);
+  if (!row || row < 2) {
+    throw new Error("無効なメモです。");
+  }
+
+  var sheet = getMemoSheet_();
+  var lastRow = sheet.getLastRow();
+  if (row > lastRow) {
+    throw new Error("対象のメモが見つかりません。");
+  }
+
+  sheet.deleteRow(row);
   return { ok: true };
 }
 
@@ -25,6 +61,7 @@ function getMemos() {
       continue;
     }
     memos.push({
+      id: i + 1,
       createdAt: row[0]
         ? Utilities.formatDate(new Date(row[0]), tz, "yyyy-MM-dd HH:mm")
         : "",
@@ -41,7 +78,7 @@ function getMemoSheet_() {
     var props = PropertiesService.getScriptProperties();
     var spreadsheetId = props.getProperty("SPREADSHEET_ID");
     if (!spreadsheetId) {
-      throw new Error("No active spreadsheet. Set SPREADSHEET_ID in script properties.");
+      throw new Error("アクティブなスプレッドシートがありません。スクリプトプロパティに SPREADSHEET_ID を設定してください。");
     }
     ss = SpreadsheetApp.openById(spreadsheetId);
   }
