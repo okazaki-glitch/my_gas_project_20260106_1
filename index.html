@@ -4,7 +4,7 @@
     <base target="_top">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Memo App</title>
+    <title>メモアプリ</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap");
 
@@ -261,13 +261,13 @@
   </head>
   <body>
     <div class="container">
-      <h1>Memo App</h1>
-      <p>Write a memo and it will be saved to the connected spreadsheet.</p>
+      <h1>メモアプリ</h1>
+      <p>メモを書いて保存すると、接続されたスプレッドシートに保存されます。</p>
 
       <div class="input-block">
-        <textarea id="memo-input" placeholder="Type your memo here..."></textarea>
+        <textarea id="memo-input" placeholder="ここにメモを入力..."></textarea>
         <div class="actions">
-          <button id="save-btn" type="button">Save Memo</button>
+          <button id="save-btn" type="button">メモを保存</button>
           <span id="status" class="status"></span>
         </div>
       </div>
@@ -291,7 +291,7 @@
         if (!memos || !memos.length) {
           const empty = document.createElement("div");
           empty.className = "empty";
-          empty.textContent = "No memos yet.";
+          empty.textContent = "まだメモがありません。";
           memoList.appendChild(empty);
           return;
         }
@@ -301,7 +301,7 @@
 
           const date = document.createElement("div");
           date.className = "memo-date";
-          date.textContent = memo.createdAt || "Unknown time";
+          date.textContent = memo.createdAt || "不明な日時";
 
           const text = document.createElement("div");
           text.textContent = memo.text || "";
@@ -322,16 +322,16 @@
       saveBtn.addEventListener("click", () => {
         const text = memoInput.value.trim();
         if (!text) {
-          setStatus("Please enter a memo before saving.", true);
+          setStatus("保存する前にメモを入力してください。", true);
           return;
         }
-        setStatus("Saving...");
+        setStatus("保存中...");
         saveBtn.disabled = true;
 
         google.script.run
           .withSuccessHandler(() => {
             memoInput.value = "";
-            setStatus("Saved.");
+            setStatus("保存しました。");
             saveBtn.disabled = false;
             loadMemos();
           })
